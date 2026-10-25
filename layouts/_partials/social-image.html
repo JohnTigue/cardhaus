@@ -1,0 +1,38 @@
+{{- $image := .resource -}}
+{{- $focal := .focal -}}
+{{- $result := $image -}}
+
+{{- if and $image (reflect.IsImageResourceProcessable $image) -}}
+  {{- $sourceWidth := $image.Width -}}
+  {{- $sourceHeight := $image.Height -}}
+  {{- $cropWidth := $sourceWidth -}}
+  {{- $cropHeight := $sourceHeight -}}
+
+  {{- /* 1200:630 reduces to 40:21. Calculate in source pixels first. */ -}}
+  {{- if gt (mul $sourceWidth 21) (mul $sourceHeight 40) -}}
+    {{- $cropWidth = int (div (mul $sourceHeight 40) 21) -}}
+  {{- else if lt (mul $sourceWidth 21) (mul $sourceHeight 40) -}}
+    {{- $cropHeight = int (div (mul $sourceWidth 21) 40) -}}
+  {{- end -}}
+
+  {{- $left := int (math.Round (sub (mul $focal.x $sourceWidth) (div $cropWidth 2.0))) -}}
+  {{- $top := int (math.Round (sub (mul $focal.y $sourceHeight) (div $cropHeight 2.0))) -}}
+  {{- $left = math.Max 0 (math.Min $left (sub $sourceWidth $cropWidth)) -}}
+  {{- $top = math.Max 0 (math.Min $top (sub $sourceHeight $cropHeight)) -}}
+  {{- $right := sub $sourceWidth (add $left $cropWidth) -}}
+  {{- $bottom := sub $sourceHeight (add $top $cropHeight) -}}
+
+  {{- if or $top $right $bottom $left -}}
+    {{- $result = $image.Filter (images.Padding (mul -1 $top) (mul -1 $right) (mul -1 $bottom) (mul -1 $left)) -}}
+  {{- end -}}
+
+  {{- if and (ge $result.Width 1200) (ge $result.Height 630) -}}
+    {{- $resizeSpec := "1200x630 lanczos" -}}
+    {{- if in (slice "avif" "jpeg" "webp") $result.MediaType.SubType -}}
+      {{- $resizeSpec = printf "%s q85" $resizeSpec -}}
+    {{- end -}}
+    {{- $result = $result.Resize $resizeSpec -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return $result -}}

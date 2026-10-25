@@ -1,0 +1,36 @@
+{{- $page := . -}}
+{{- $title := cond $page.IsHome site.Title (printf "%s | %s" $page.Title site.Title) -}}
+{{- $description := partial "page-description.html" $page -}}
+{{- $imageContext := partial "page-image-context.html" (dict "page" $page "purpose" "social") -}}
+{{- $socialImage := false -}}
+{{- with $imageContext.resource -}}
+  {{- $socialImage = partial "social-image.html" $imageContext -}}
+{{- end -}}
+
+<link rel="canonical" href="{{ $page.Permalink }}">
+{{- with site.Params.cardhaus.themeColor }}
+<meta name="theme-color" content="{{ . }}">
+{{- else }}
+{{- warnf "Cardhaus: params.cardhaus.themeColor is not set; omitting theme-color metadata and manifest theme_color." -}}
+{{- end }}
+{{- with $page.OutputFormats.Get "RSS" }}
+<link rel="alternate" type="{{ .MediaType.Type | safeHTMLAttr }}" href="{{ .Permalink }}" title="{{ $page.Title }} RSS Feed">
+{{- end }}
+<meta property="og:title" content="{{ $title }}">
+<meta property="og:description" content="{{ $description }}">
+<meta property="og:url" content="{{ $page.Permalink }}">
+<meta property="og:site_name" content="{{ site.Title }}">
+<meta property="og:locale" content="{{ site.Language.Locale | default "en" }}">
+<meta property="og:type" content="{{ if $page.IsPage }}article{{ else }}website{{ end }}">
+<meta name="twitter:card" content="{{ if $socialImage }}summary_large_image{{ else }}summary{{ end }}">
+<meta name="twitter:title" content="{{ $title }}">
+<meta name="twitter:description" content="{{ $description }}">
+{{- with $socialImage }}
+<meta property="og:image" content="{{ .Permalink }}">
+<meta property="og:image:type" content="{{ .MediaType.Type }}">
+<meta property="og:image:width" content="{{ .Width }}">
+<meta property="og:image:height" content="{{ .Height }}">
+<meta property="og:image:alt" content="{{ $imageContext.alt }}">
+<meta name="twitter:image" content="{{ .Permalink }}">
+<meta name="twitter:image:alt" content="{{ $imageContext.alt }}">
+{{- end }}

@@ -1,0 +1,31 @@
+{{- $heading := .Get "heading" -}}
+{{- $class := strings.TrimSpace (.Get "class") -}}
+{{- $headingID := printf "topic-card-grid-heading-%s" (md5 (printf "%s:%v" .Page.RelPermalink .Position)) -}}
+{{- $parts := strings.Split .Inner "::CARDHAUS-TOPIC-CARD::" -}}
+{{- if lt (len $parts) 2 -}}
+  {{- errorf "topic-card-grid shortcode requires at least one nested topic-card (%s)" .Position -}}
+{{- end -}}
+<section class="topic-card-grid{{ if .Page.IsHome }} topic-card-grid--home{{ end }}{{ with $class }} {{ . }}{{ end }}"{{ with $heading }} aria-labelledby="{{ $headingID }}"{{ else }} aria-label="Topics"{{ end }}>
+  <div{{ if .Page.IsHome }} class="topics-grid"{{ end }}>
+  {{ with $heading }}
+    {{ if $.Page.IsHome }}
+      <header class="section-header">
+        <h2 class="section-title" id="{{ $headingID }}">{{ . }}</h2>
+      </header>
+    {{ else }}
+      <h2 class="topic-card-grid-title" id="{{ $headingID }}">{{ . }}</h2>
+    {{ end }}
+  {{ end }}
+  {{- $intro := strings.TrimSpace (index $parts 0) -}}
+  {{ with $intro }}
+    <div class="topic-card-grid-intro">
+      {{ $.Page.RenderString (dict "display" "block") . }}
+    </div>
+  {{ end }}
+  <ul class="card-grid{{ if not .Page.IsHome }} card-grid--embedded{{ end }}" role="list"{{ with $heading }} aria-labelledby="{{ $headingID }}"{{ else }} aria-label="Topics"{{ end }}>
+    {{- range after 1 $parts -}}
+      {{- . | safeHTML -}}
+    {{- end -}}
+  </ul>
+  </div>
+</section>

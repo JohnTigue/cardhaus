@@ -1,0 +1,54 @@
+{{- $page := .page -}}
+{{- $purpose := .purpose | default "hero" -}}
+{{- $hero := $page.Params.hero | default dict -}}
+{{- $social := $page.Params.social | default dict -}}
+{{- $heroResource := partial "hero-resource.html" $page -}}
+{{- $resource := $heroResource -}}
+{{- $alt := $page.Title -}}
+{{- $focal := partial "focal-coordinates.html" ($hero.focal | default dict) -}}
+
+{{- with $hero.alt }}{{ $alt = . }}{{ end -}}
+
+{{- if eq $purpose "social" -}}
+  {{- $resource = false -}}
+  {{- $usesHero := false -}}
+
+  {{- with $social.image -}}
+    {{- $resource = $page.Resources.GetMatch . -}}
+    {{- if not $resource -}}
+      {{- errorf "Cardhaus social image %q was not found for %s" . $page.File.Path -}}
+    {{- end -}}
+    {{- if and $heroResource (eq $resource.RelPermalink $heroResource.RelPermalink) -}}
+      {{- $usesHero = true -}}
+    {{- end -}}
+  {{- else with $heroResource -}}
+    {{- $resource = . -}}
+    {{- $usesHero = true -}}
+  {{- else -}}
+    {{- with site.Params.cardhaus.social.image -}}
+      {{- $resource = resources.Get . -}}
+      {{- if not $resource -}}
+        {{- errorf "Cardhaus site social image %q was not found in assets" . -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if not $usesHero -}}
+    {{- $alt = $page.Title -}}
+    {{- $focal = partial "focal-coordinates.html" dict -}}
+  {{- end -}}
+
+  {{- if and (not $usesHero) (not $social.image) -}}
+    {{- with site.Params.cardhaus.social.alt }}{{ $alt = . }}{{ end -}}
+    {{- with site.Params.cardhaus.social.focal -}}
+      {{- $focal = partial "focal-coordinates.html" . -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- with $social.alt }}{{ $alt = . }}{{ end -}}
+  {{- with $social.focal -}}
+    {{- $focal = partial "focal-coordinates.html" . -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return (dict "resource" $resource "alt" $alt "focal" $focal) -}}

@@ -1,0 +1,12 @@
+{{- $slides := slice -}}
+{{- with .Resources.GetMatch "carousel.yaml" -}}
+  {{- $slides = . | transform.Unmarshal -}}
+{{- end -}}
+{{- /* Every slide can become an immediate neighbour after the first timed move.
+      Preload the full, deliberately short editorial carousel before CSS/JS. */ -}}
+{{- range $slides -}}
+  {{- $slide := partial "carousel-slide-data.html" (dict "item" . "page" $ "source" $.Path) -}}
+  {{- with $slide -}}
+    <link rel="preload" as="image" href="{{ .src }}"{{ with .srcset }} imagesrcset="{{ . }}" imagesizes="100vw"{{ end }} fetchpriority="high">
+  {{- end -}}
+{{- end -}}

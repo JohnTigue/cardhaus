@@ -1,0 +1,301 @@
+/* ── Layout Wrapper ─────────────────────────────────────────── */
+.header-inner,
+.footer-inner,
+.billboard-text,
+.homepage-content,
+.posts-preview,
+.posts-section,
+.blog-post,
+.topic-page,
+.standard-page {
+  max-width: var(--max-width);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--margin);
+  padding-right: var(--margin);
+}
+
+.topics-grid {
+  max-inline-size: 118.75rem;
+  margin-inline: auto;
+  padding-inline: var(--margin);
+}
+
+/* ── Site Header ────────────────────────────────────────────── */
+.site-header {
+  background: var(--primary);
+  background-repeat: repeat;
+  background-size: auto;
+  border-bottom: none;
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  position: relative;
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.has-sticky-header {
+  scroll-padding-top: var(--header-height);
+}
+
+.has-sticky-header .site-header {
+  position: sticky;
+  top: 0;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+  position: relative;
+  padding-left: calc(var(--margin) / 2);
+  padding-right: calc(var(--margin) / 2);
+}
+
+.site-logo {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  width: 720px;
+  padding: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-decoration: none;
+}
+
+.logo-lockup {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+}
+
+.logo-img {
+  width: 720px;
+  max-width: none;
+  max-height: none;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.logo-bracket {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--on-primary);
+}
+
+.logo-text {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--on-primary);
+}
+
+.site-nav {
+  display: flex;
+  gap: var(--gutter);
+  align-items: center;
+  align-self: center;
+  height: var(--header-height);
+  /* Temporary experiment: hide the header navigation without removing it. */
+  display: none;
+}
+
+.site-logo:focus {
+    outline: none;
+}
+
+.site-nav a {
+  font-family: var(--font-brand);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  text-decoration: none;
+  color: var(--paper);
+  padding: 6px 16px;
+  border-radius: var(--radius-full);
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.site-nav a:hover {
+  background: var(--surface-container);
+  color: var(--primary);
+}
+
+.site-nav a.nav-active {
+  background: var(--primary-container);
+  color: var(--on-primary-container);
+}
+
+/* ── Billboard ───────────────────────────────────────────────────── */
+.billboard {
+  height: 100vh;
+  height: 100dvh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background-size: cover;
+  background-position: 70% top;
+  background-repeat: no-repeat;
+}
+
+
+.billboard-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+
+.billboard-title {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  font-size: 4.25rem;
+  font-weight: bold;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--primary);
+}
+
+.billboard-logo-large {
+  display: block;
+  margin: 0 auto;
+  max-width: 800px;
+  width: 90vw;
+  height: auto;
+}
+
+.billboard-logo-mark {
+  display: block;
+  width: clamp(14rem, 31.5vw, 26.25rem);
+  height: auto;
+  margin: 0 auto;
+}
+
+.billboard-wordmark {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  color: var(--primary);
+  font-family: var(--font-wordmark);
+  font-size: clamp(3rem, 8vw, 7.5rem);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: .84;
+  text-align: center;
+  text-transform: none;
+  text-shadow:
+    -1px -1px 0 rgba(0, 0, 0, .62),
+    1px -1px 0 rgba(0, 0, 0, .62),
+    -1px 1px 0 rgba(0, 0, 0, .62),
+    1px 1px 0 rgba(0, 0, 0, .62),
+    0 2px 0 rgba(0, 0, 0, .55),
+    0 5px 12px rgba(0, 0, 0, .82),
+    0 0 24px rgba(0, 0, 0, .72);
+}
+
+
+.billboard-sub {
+  font-family: var(--font-brand);
+  font-size: 2.5rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--primary);
+  margin-top: 16px;
+  text-shadow: 0 4px 8px rgba(1,1,1,0.5);
+}
+
+.section-subtitle {
+  font-family: var(--font-wordmark);
+  font-weight: 800;
+  font-size: 1.5rem;
+  text-align: center;
+  display: block;
+  width: 100%;
+  color: var(--primary);
+  text-shadow:
+    -1px -1px 0 rgba(0, 0, 0, .68),
+    1px -1px 0 rgba(0, 0, 0, .68),
+    -1px 1px 0 rgba(0, 0, 0, .68),
+    1px 1px 0 rgba(0, 0, 0, .68),
+    0 2px 0 rgba(0, 0, 0, .6),
+    0 4px 10px rgba(0, 0, 0, .85),
+    0 0 20px rgba(0, 0, 0, .72);
+}
+
+
+@media (max-width: {{ site.Params.cardhaus.breakpoints.tablet | default 1200 }}px) {
+.billboard-sub {
+  font-size: 2rem;
+}
+}
+
+@media (max-width: {{ site.Params.cardhaus.breakpoints.mobile | default 850 }}px) {
+    .billboard-sub {
+        font-size: 1.5rem;
+    }
+    .billboard {
+        align-items: flex-end;
+    }
+    .billboard-text {
+        padding-bottom: 2rem;
+    }
+
+.section-subtitle {
+  font-size: 1.5rem;
+}
+}
+
+@media (max-width: 600px) {
+.billboard-text {
+  gap: 0.75rem;
+}
+
+.billboard-logo-mark {
+  width: clamp(11.375rem, 63vw, 15.75rem);
+}
+
+.billboard-wordmark {
+  font-size: clamp(2.75rem, 13vw, 4.5rem);
+}
+
+.billboard-sub {
+  font-size: 1rem;
+}
+.section-subtitle {
+  font-size: 1rem;
+}
+}
+
+
+.billboard-tagline {
+  font-family: var(--font-brand);
+  font-size: 1rem;
+  font-weight: 400;
+  padding: 2rem 0 1rem 0;
+  line-height: 1.5;
+  color: var(--primary);
+}
+
+
+.billboard-ctas {
+  display: flex;
+  justify-content: center;
+  gap: var(--gutter);
+  margin-top: var(--margin);
+  flex-wrap: wrap;
+}
+
+
+.homepage-topics-section-header {
+    padding-top: 5rem;
+}

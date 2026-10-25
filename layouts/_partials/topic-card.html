@@ -1,0 +1,52 @@
+{{- $page := . -}}
+{{- $image := "" -}}
+{{- $title := "" -}}
+{{- $description := "" -}}
+{{- $hasTitleOverride := false -}}
+{{- $hasDescriptionOverride := false -}}
+{{- $asListItem := false -}}
+{{- if reflect.IsMap . -}}
+  {{- $page = .page -}}
+  {{- $image = .image | default "" -}}
+  {{- $asListItem = .asListItem | default false -}}
+  {{- if isset . "title" -}}
+    {{- with .title -}}
+      {{- $title = . -}}
+      {{- $hasTitleOverride = true -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if isset . "description" -}}
+    {{- with .description -}}
+      {{- $description = . -}}
+      {{- $hasDescriptionOverride = true -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if not $hasTitleOverride }}{{ $title = $page.Title }}{{ end -}}
+{{ if $asListItem }}<li class="topic-card">{{ else }}<article class="topic-card">{{ end }}
+  <a href="{{ $page.RelPermalink }}" class="card-link">
+    {{ partial "hero-image.html" (dict
+      "page" $page
+      "image" $image
+      "alt" $title
+      "variant" "card"
+      "loading" "lazy"
+      "sizes" "auto, (max-width: 720px) 100vw, (max-width: 1100px) 50vw, 33vw"
+    ) }}
+    <div class="card-overlay glass">
+      <div class="card-copy">
+        <h2 class="card-title">{{ $title }}</h2>
+        {{/* Listing shortcodes can include this page: avoid evaluating their
+             content recursively just to obtain an automatic summary. */}}
+        {{ if $hasDescriptionOverride }}
+          <p class="card-summary">{{ $page.RenderString $description }}</p>
+        {{ else if $page.HasShortcode "branch-children" }}
+          {{ with $page.Params.summary }}<p class="card-summary">{{ $page.RenderString . }}</p>{{ end }}
+        {{ else }}
+          {{ with $page.Summary }}<p class="card-summary">{{ . }}</p>{{ end }}
+        {{ end }}
+      </div>
+      {{ with $page.Params.topic_type }}<span class="card-label">{{ . }}</span>{{ end }}
+    </div>
+  </a>
+{{ if $asListItem }}</li>{{ else }}</article>{{ end }}

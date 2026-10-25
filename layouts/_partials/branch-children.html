@@ -1,0 +1,29 @@
+{{- $branch := .branch -}}
+{{- $heading := .heading | default $branch.Title -}}
+{{- $headingID := .headingID | default "branch-children-heading" -}}
+{{- $branchDir := path.Clean (strings.TrimPrefix "/" $branch.Path) -}}
+{{- with $branch.File -}}{{- $branchDir = path.Clean .Dir -}}{{- end -}}
+{{- $children := slice -}}
+{{- range $child := $branch.Pages.ByWeight -}}
+  {{- with .File -}}
+    {{/* Hugo sections may include pages from deeper, unsectioned folders. */}}
+    {{- $parentDir := path.Dir (path.Clean .Dir) -}}
+    {{- if and (in (slice "index.md" "_index.md") .LogicalName) (eq $parentDir $branchDir) $child.RelPermalink -}}
+      {{- $children = $children | append $child -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- with $children -}}
+<section class="topics-section" aria-labelledby="{{ $headingID }}"{{ with $.id }} id="{{ . }}"{{ end }}>
+  <div class="topics-grid">
+    <header class="section-header">
+      <h2 class="section-title" id="{{ $headingID }}">{{ $heading }}</h2>
+    </header>
+    <ul class="card-grid" role="list" aria-labelledby="{{ $headingID }}">
+      {{ range . }}
+        {{ partial "topic-card.html" (dict "page" . "asListItem" true) }}
+      {{ end }}
+    </ul>
+  </div>
+</section>
+{{- end -}}

@@ -1,0 +1,24 @@
+{{- $page := . -}}
+{{- $description := "" -}}
+
+{{- with $page.Description -}}
+  {{- $description = . | plainify | htmlUnescape | strings.TrimSpace -}}
+{{- end -}}
+{{- if not $description -}}
+  {{- with $page.Params.summary -}}
+    {{- $description = . | plainify | htmlUnescape | strings.TrimSpace -}}
+  {{- end -}}
+{{- end -}}
+{{- if not $description -}}
+  {{- with $page.Summary -}}
+    {{- $description = . | plainify | htmlUnescape | strings.TrimSpace -}}
+  {{- end -}}
+{{- end -}}
+{{- if not $description -}}
+  {{- with site.Params.description -}}
+    {{- $description = . | plainify | htmlUnescape | strings.TrimSpace -}}
+  {{- end -}}
+{{- end -}}
+{{- $description = $description | replaceRE `\s+` " " | strings.TrimSpace | truncate 200 -}}
+
+{{- return $description -}}

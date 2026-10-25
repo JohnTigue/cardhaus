@@ -1,0 +1,125 @@
+{{- $item := .item -}}
+{{- $source := .source | default "carousel.yaml" -}}
+{{- $carouselPage := .page -}}
+{{- if isset $item "slug" -}}
+  {{- errorf "%s: carousel slide uses removed field \"slug\"; replace it with required image and hash fields plus optional link" $source -}}
+{{- end -}}
+{{- $imagePath := strings.TrimSpace ($item.image | default "") -}}
+{{- $hash := strings.TrimSpace ($item.hash | default "") -}}
+{{- $alt := strings.TrimSpace ($item.alt | default "") -}}
+{{- $remote := false -}}
+{{- $image := false -}}
+{{- $src := "" -}}
+{{- $fullSrc := "" -}}
+{{- $width := 0 -}}
+{{- $height := 0 -}}
+{{- $srcset := "" -}}
+{{- $link := "" -}}
+{{- $viewTransitionName := "" -}}
+{{- $ratio := 1.777778 -}}
+{{- if not $imagePath -}}
+  {{- errorf "%s: carousel slide is missing required field \"image\"" $source -}}
+{{- else if not (findRE `^[A-Za-z0-9][A-Za-z0-9_-]*$` $hash) -}}
+  {{- errorf "%s: carousel slide for %q has invalid hash %q (use letters, numbers, hyphens, and underscores; start with a letter or number)" $source $imagePath $hash -}}
+{{- else if not $alt -}}
+  {{- errorf "%s: carousel slide for %q is missing accessible alt text" $source $imagePath -}}
+{{- else -}}
+  {{- $remote = or (hasPrefix $imagePath "https://") (hasPrefix $imagePath "http://") -}}
+  {{- $src = $imagePath -}}
+  {{- $fullSrc = $imagePath -}}
+  {{- $width = int ($item.width | default 0) -}}
+  {{- $height = int ($item.height | default 0) -}}
+  {{- if $remote -}}
+    {{- $hasWidth := isset $item "width" -}}
+    {{- $hasHeight := isset $item "height" -}}
+    {{- if and (or $hasWidth $hasHeight) (or (not $hasWidth) (not $hasHeight) (le $width 0) (le $height 0)) -}}
+      {{- errorf "%s: remote carousel image %q must have both positive width and height when either dimension is supplied" $source $imagePath -}}
+    {{- end -}}
+  {{- else -}}
+    {{- if not (hasPrefix $imagePath "/") -}}
+      {{- $image = $carouselPage.Resources.GetMatch $imagePath -}}
+      {{- if not $image -}}
+        {{- errorf "%s: carousel image %q was not found beside carousel.yaml in page bundle %q" $source $imagePath $carouselPage.Path -}}
+      {{- end -}}
+    {{- else -}}
+      {{- $contentPath := strings.TrimPrefix "/" $imagePath -}}
+      {{- $pageRef := printf "/%s" (path.Dir $contentPath) -}}
+      {{- $page := site.GetPage $pageRef -}}
+      {{- if not $page -}}
+        {{- errorf "%s: no page bundle found for carousel image %q (looked for %q)" $source $imagePath $pageRef -}}
+      {{- else -}}
+        {{- $image = $page.Resources.GetMatch (path.Base $contentPath) -}}
+        {{- if not $image -}}
+          {{- errorf "%s: carousel image %q was not found in page bundle %q" $source $imagePath $pageRef -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+    {{- with $image -}}
+      {{- $variants := partial "responsive-image-resources.html" . -}}
+      {{- $small := $variants.small -}}
+      {{- $medium := $variants.medium -}}
+      {{- $large := $variants.large -}}
+      {{- $fallback := $variants.fallback -}}
+      {{- $src = $fallback.RelPermalink -}}
+      {{- $fullSrc = .RelPermalink -}}
+      {{- $width = $fallback.Width -}}
+      {{- $height = $fallback.Height -}}
+      {{- with $small -}}
+        {{- $srcset = printf "%s 640w" .RelPermalink -}}
+        {{- with $medium }}{{ $srcset = printf "%s, %s 1000w" $srcset .RelPermalink }}{{ end -}}
+        {{- with $large }}{{ $srcset = printf "%s, %s 1600w" $srcset .RelPermalink }}{{ end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if or $remote $image -}}
+    {{- $link = strings.TrimSpace ($item.link | default "") -}}
+    {{- if and (hasPrefix $link "/") (not (hasPrefix $link "//")) -}}
+      {{- $parsedLink := urls.Parse $link -}}
+      {{- $destinationPath := $parsedLink.Path -}}
+      {{- $destinationHash := $parsedLink.Fragment -}}
+      {{- $destination := site.GetPage $destinationPath -}}
+      {{- if not $destination -}}
+        {{- $permalinkMatches := where site.Pages "RelPermalink" $destinationPath -}}
+        {{- if eq (len $permalinkMatches) 1 -}}
+          {{- $destination = index $permalinkMatches 0 -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if not $destination -}}
+        {{- errorf "%s: carousel link %q points to a missing same-site page" $source $link -}}
+      {{- else -}}
+        {{- $destinationCarousel := $destination.Resources.GetMatch "carousel.yaml" -}}
+        {{- if $destinationCarousel -}}
+          {{- if not $destinationHash -}}
+            {{- /* A fragmentless link into a carousel can still be ordinary
+                  navigation. The repository validator detects a missing
+                  fragment when the linked image is shared by both carousels. */ -}}
+          {{- else -}}
+          {{- $destinationSlides := $destinationCarousel | transform.Unmarshal -}}
+          {{- $matches := where $destinationSlides "hash" $destinationHash -}}
+          {{- if not $matches -}}
+            {{- errorf "%s: carousel link %q does not match any destination slide hash" $source $link -}}
+          {{- else -}}
+            {{- $viewTransitionName = "carousel-handoff" -}}
+          {{- end -}}
+          {{- end -}}
+        {{- else -}}
+          {{- if $destinationHash -}}
+            {{- errorf "%s: carousel-to-hero link %q must not include a fragment" $source $link -}}
+          {{- end -}}
+          {{- $destinationHero := partial "hero-resource.html" $destination -}}
+          {{- if not $destinationHero -}}
+            {{- errorf "%s: carousel link %q points to a page with neither carousel.yaml nor a hero image" $source $link -}}
+          {{- else if $remote -}}
+            {{- errorf "%s: remote carousel image %q cannot hand off to local hero image %q" $source $imagePath $destinationHero.Name -}}
+          {{- else if ne $image.RelPermalink $destinationHero.RelPermalink -}}
+            {{- errorf "%s: carousel link %q does not use the destination hero image" $source $link -}}
+          {{- else -}}
+            {{- $viewTransitionName = partial "view-transition-name.html" (dict "page" $destination "image" $destinationHero) -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if and $width $height }}{{ $ratio = div (float $width) (float $height) }}{{ end -}}
+    {{- return (dict "src" $src "fullSrc" $fullSrc "srcset" $srcset "width" $width "height" $height "ratio" $ratio "remote" $remote "hash" $hash "alt" $alt "link" $link "focal" ($item.focal | default dict) "viewTransitionName" $viewTransitionName) -}}
+  {{- end -}}
+{{- end -}}

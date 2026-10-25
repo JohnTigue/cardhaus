@@ -1,0 +1,40 @@
+{{ define "main" }}
+{{ partial "hero-carousel.html" . }}
+{{ $children := .Pages.ByWeight }}
+{{ $hasIntro := ne (strings.TrimSpace .RawContent) "" }}
+{{ if or $hasIntro (not $children) }}
+  <article class="standard-page topic-page section-intro">
+    {{ partial "breadcrumbs.html" . }}
+    <header class="page-header">
+      <div class="post-header-inner">
+        <h1 class="page-title">{{ .Title }}</h1>
+        {{ with .Date }}<p class="post-date">{{ . | time.Format "January 2, 2006" }}</p>{{ end }}
+      </div>
+    </header>
+    {{ with .Content }}
+      <div class="post-body">
+        {{ . }}
+      </div>
+    {{ end }}
+  </article>
+{{ end }}
+{{ if not (.HasShortcode "branch-children") }}
+{{ with $children }}
+  <section class="topics-grid section-children" aria-labelledby="section-children-title">
+    <header class="section-header">
+      {{ if $hasIntro }}
+        <h2 class="section-title" id="section-children-title">Topics</h2>
+      {{ else }}
+        {{ partial "breadcrumbs.html" $ }}
+        <h1 class="section-title" id="section-children-title">{{ $.Title | upper }}</h1>
+      {{ end }}
+    </header>
+    <ul class="card-grid" role="list" aria-labelledby="section-children-title">
+      {{ range . }}
+        {{ partial "topic-card.html" (dict "page" . "asListItem" true) }}
+      {{ end }}
+    </ul>
+</section>
+{{ end }}
+{{ end }}
+{{ end }}

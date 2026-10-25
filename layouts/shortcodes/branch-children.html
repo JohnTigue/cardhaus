@@ -1,0 +1,16 @@
+{{- $branch := .Page.CurrentSection -}}
+{{- if .Page.IsHome -}}{{- $branch = .Page -}}{{- end -}}
+{{- with .Get "ref" -}}
+  {{- if not (strings.HasPrefix . "/") -}}
+    {{- errorf "branch-children ref must begin with /, got %q (%s)" . $.Position -}}
+  {{- end -}}
+  {{- $branch = site.GetPage . -}}
+{{- end -}}
+{{- if not $branch -}}
+  {{- errorf "branch-children could not resolve branch %q (%s)" (.Get "ref") .Position -}}
+{{- else if not (or $branch.IsSection $branch.IsHome) -}}
+  {{- errorf "branch-children requires a branch (_index.md), got %q (%s)" (.Get "ref") .Position -}}
+{{- else -}}
+  {{- $headingID := printf "branch-children-heading-%s" (md5 (printf "%s:%v" .Page.RelPermalink .Position)) -}}
+  {{- partial "branch-children.html" (dict "branch" $branch "heading" (.Get "heading") "headingID" $headingID) -}}
+{{- end -}}

@@ -1,0 +1,19 @@
+[params]
+  name = "Cardhaus"
+  description = "An image-first Hugo theme for topic-centered knowledge sites. Topics have cards, arranged in a house thereof"
+
+  # These are build-time values used by the theme's responsive CSS. A site may
+  # override either value under [params.cardhaus.breakpoints].
+  [params.cardhaus.breakpoints]
+    tablet = 1200
+    mobile = 850
+
+  # Shared by the grid's minimum track width and the card's landscape query.
+  # Consumers may override this starting value. Defaults to 584px in components.css
+  [params.cardhaus.card]
+    landscapeMaxInlineSize = 500
+
+[module]
+  [module.hugoVersion]
+    extended = false
+    min = "0.146.0"

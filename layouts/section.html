@@ -1,0 +1,20 @@
+{{ define "main" }}
+{{ partial "hero-carousel.html" . }}
+{{ if .HasShortcode "branch-children" }}
+<article class="standard-page">
+  <div class="post-body">{{ .Content }}</div>
+</article>
+{{ else }}
+<section class="topics-grid">
+  <header class="section-header">
+    <h1 class="section-title" id="card-grid-title">// {{ .Title | upper }}</h1>
+    <p class="section-sub">{{ len .RegularPages }} item{{ if ne (len .RegularPages) 1 }}s{{ end }}</p>
+  </header>
+  <ul class="card-grid" role="list" aria-labelledby="card-grid-title">
+    {{ range .RegularPages.ByWeight }}
+      {{ partial "topic-card.html" (dict "page" . "asListItem" true) }}
+    {{ end }}
+  </ul>
+</section>
+{{ end }}
+{{ end }}

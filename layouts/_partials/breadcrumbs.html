@@ -1,0 +1,12 @@
+{{- $current := . -}}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <ol>
+    {{- range .Ancestors.Reverse }}
+      {{- $href := .RelPermalink -}}
+      {{- if $href }}
+        <li><a href="{{ $href }}">{{ if .IsHome }}Home{{ else }}{{ .LinkTitle }}{{ end }}</a></li>
+      {{- end }}
+    {{- end }}
+    <li aria-current="page">{{ $current.LinkTitle }}</li>
+  </ol>
+</nav>

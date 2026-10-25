@@ -1,0 +1,3 @@
+{{- if hugo.IsServer -}}
+<mark class="todo">TODO: {{ .Inner | markdownify }}</mark>
+{{- end -}}

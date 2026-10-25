@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+{{- $hasSectionCarousel := and .IsSection (.Resources.GetMatch "carousel.yaml") -}}
+{{- $hasLeafCarousel := and .IsPage (.Resources.GetMatch "carousel.yaml") -}}
+{{- $isAtelier := eq .Layout "atelier" -}}
+{{- $stickyHeader := .Param "stickyHeader" -}}
+<html lang="{{ site.Language.Locale | default "en" }}"
+      {{ if .IsHome }}
+          class="homepage homepage-opening-snap{{ if $stickyHeader }} has-sticky-header{{ end }}"
+      {{ else if $hasSectionCarousel }}
+          class="topic-section-page topic-section-opening-snap{{ if $stickyHeader }} has-sticky-header{{ end }}"
+      {{ else if $isAtelier }}
+          class="atelier-page atelier-opening-snap{{ if $stickyHeader }} has-sticky-header{{ end }}"
+      {{ else if $hasLeafCarousel }}
+          class="leaf-page leaf-opening-snap{{ if $stickyHeader }} has-sticky-header{{ end }}"
+      {{ else if $stickyHeader }}
+          class="has-sticky-header"
+      {{ end }}>
+<head>
+  <meta charset="utf-8">
+  {{ with site.Params.build.version }}<meta name="build-revision" content="{{ . }}">{{ end }}
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ if .IsHome }}{{ site.Title }}{{ else }}{{ .Title }} | {{ site.Title }}{{ end }}</title>
+  {{- $description := partial "page-description.html" . }}
+  <meta name="description" content="{{ $description }}">
+  {{ partial "favicons.html" . }}
+  {{ partial "social-metadata.html" . }}
+  {{ partial "hero-carousel-preloads.html" . }}
+  <link rel="stylesheet" href="{{ "css/swiper.min.css" | relURL }}">
+  {{ $styles := slice
+    (resources.Get "css/tokens.css" | resources.ExecuteAsTemplate "css/tokens.css" .)
+    (resources.Get "css/base.css")
+    (resources.Get "css/layout.css" | resources.ExecuteAsTemplate "css/layout.css" .)
+    (resources.Get "css/components.css" | resources.ExecuteAsTemplate "css/components.css" .)
+  }}
+  {{ if hugo.IsProduction }}
+    {{ $css := $styles | resources.Concat "css/main.css" | minify | fingerprint }}
+    <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+  {{ else }}
+    {{ range $styles }}
+      <link rel="stylesheet" href="{{ .RelPermalink }}">
+    {{ end }}
+  {{ end }}
+  {{ with site.Params.cardhaus.customStylesheet }}
+    {{ with resources.Get . }}
+      {{ $customCSS := . | resources.ExecuteAsTemplate .RelPermalink $ }}
+      {{ if hugo.IsProduction }}
+        {{ $customCSS = $customCSS | minify | fingerprint }}
+        <link rel="stylesheet" href="{{ $customCSS.RelPermalink }}" integrity="{{ $customCSS.Data.Integrity }}">
+      {{ else }}
+        <link rel="stylesheet" href="{{ $customCSS.RelPermalink }}">
+      {{ end }}
+    {{ else }}
+      {{ warnf "Cardhaus custom stylesheet %q was not found in assets" . }}
+    {{ end }}
+  {{ end }}
+</head>
+<body>
+  {{ partial "glass-filters.html" . }}
+  <header class="site-header">
+    <div class="header-inner">
+      <a href="{{ "/" | relURL }}" class="site-logo">
+        {{ with site.Params.logo }}
+          {{ with resources.Get . }}
+            <div class="logo-lockup">
+              {{ $logo := .Resize "720x" | fingerprint }}
+              <img src="{{ $logo.RelPermalink }}" alt="{{ site.Title }}" class="logo-img">
+            </div>
+          {{ else }}
+            <span class="logo-text">{{ site.Title }}</span>
+          {{ end }}
+        {{ else }}
+        <span class="logo-bracket">[</span><span class="logo-text">{{ site.Title | upper }}</span><span class="logo-bracket">]</span>
+        {{ end }}
+      </a>
+      <nav class="site-nav" aria-label="Main navigation">
+        {{ range site.Menus.main }}
+          {{ $isCurrent := $.IsMenuCurrent "main" . }}
+          {{ $isAncestor := $.HasMenuCurrent "main" . }}
+          <a href="{{ .URL | relURL }}"{{ if or $isCurrent $isAncestor }} class="nav-active"{{ end }}{{ if $isCurrent }} aria-current="page"{{ else if $isAncestor }} aria-current="true"{{ end }}>{{ .Name }}</a>
+        {{ end }}
+      </nav>
+    </div>
+    </header>
+
+  <main class="site-main" id="main">
+    {{ block "main" . }}{{ end }}
+  </main>
+
+  {{- $footer := .Params.footer | default dict -}}
+  {{- $footerImage := false -}}
+  {{- with $footer.image -}}
+    {{- if strings.HasPrefix . "/" -}}
+      {{- $imagePath := strings.TrimPrefix "/" . -}}
+      {{- $resourcePage := site.GetPage (path.Dir $imagePath) -}}
+      {{- if $resourcePage -}}
+        {{- $footerImage = $resourcePage.Resources.GetMatch (path.Base $imagePath) -}}
+      {{- end -}}
+      {{- if not $footerImage -}}
+        {{- $footerImage = resources.Get $imagePath -}}
+      {{- end -}}
+    {{- else -}}
+      {{- $footerImage = $.Resources.GetMatch . -}}
+      {{- if not $footerImage -}}
+        {{- $footerImage = resources.Get . -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if not $footerImage -}}
+      {{- errorf "Footer image %q was not found for %s (use a bundle-relative name, an absolute page-resource path, or an asset path)" . $.File.Path -}}
+    {{- end -}}
+  {{- end -}}
+  <footer class="site-footer{{ if $footerImage }} site-footer--image{{ end }}">
+    {{- with $footerImage -}}
+      {{- $footerImage600 := .Resize "600x webp q80" -}}
+      {{- $footerImage960 := .Resize "960x webp q80" -}}
+      {{- $footerImage1440 := .Resize "1440x webp q80" -}}
+      {{- $footerFocal := $footer.focal | default dict -}}
+      {{- $footerFocalX := $footerFocal.x | default 0.5 -}}
+      {{- $footerFocalY := index $footerFocal "y" | default 0.5 -}}
+      <div class="footer-bg">
+        <img
+          src="{{ $footerImage960.RelPermalink }}"
+          srcset="{{ $footerImage600.RelPermalink }} 600w, {{ $footerImage960.RelPermalink }} 960w, {{ $footerImage1440.RelPermalink }} 1440w"
+          sizes="100vw"
+          width="{{ $footerImage960.Width }}"
+          height="{{ $footerImage960.Height }}"
+          alt=""
+          class="footer-bg-img"
+          style="object-position: {{ mul $footerFocalX 100 }}% {{ mul $footerFocalY 100 }}%"
+          loading="lazy">
+      </div>
+    {{- end }}
+    <div class="footer-inner">
+      <span class="footer-copy">©{{ now.Year }} {{ site.Title }}</span>
+    </div>
+  </footer>
+
+  <script src="{{ "js/swiper.min.js?v=12.1.4" | relURL }}"></script>
+  <script>
+    document.querySelectorAll('.hero-carousel').forEach(function (carousel) {
+      if (carousel.swiper) return;
+      var slides = Array.prototype.slice.call(carousel.querySelectorAll(':scope > .swiper-wrapper > .swiper-slide'));
+
+      /* The centred opening frame needs three decoded images: its left neighbour,
+         the active image, and its right neighbour.  Head preloads start their
+         downloads early; this gate prevents Swiper's first layout from racing
+         their decode and briefly painting an empty track slot. */
+      var openingImages = slides.slice(0, 3).map(function (slide) {
+        var image = slide.querySelector('img');
+        if (!image || (image.complete && image.naturalWidth)) return Promise.resolve();
+        if (image.decode) return image.decode().catch(function () {});
+        return new Promise(function (resolve) {
+          image.addEventListener('load', resolve, { once: true });
+          image.addEventListener('error', resolve, { once: true });
+        });
+      });
+
+      Promise.all(openingImages).then(function () {
+      var many = slides.length > 1;
+      var wrapper = carousel.querySelector(':scope > .swiper-wrapper');
+      var previous = carousel.querySelector('.swiper-button-prev');
+      var next = carousel.querySelector('.swiper-button-next');
+      var pagination = carousel.querySelector('.hero-carousel-pagination');
+      var delay = 3000;
+      var timer = null;
+      var hovered = false;
+      var transition = 0;
+      var manualNavigation = false;
+      var heroPreloads = [];
+      var requestedHash = window.location.hash.slice(1);
+      var requestedIndex = slides.findIndex(function (slide) {
+        return slide.getAttribute('data-hash') === requestedHash;
+      });
+      if (requestedIndex >= 0) manualNavigation = true;
+
+      /* `object-position: focal-x` aligns that percentage in the image with
+         the same percentage in the frame; it does not put the focal pixel in
+         the centre.  Work out the real object-fit crop instead, so each wide
+         image starts with its editorial focal point centred when possible. */
+      function centreWideSlideFocal(slide) {
+        var image = slide.querySelector('.hero-carousel-image');
+        if (!image || !image.naturalWidth || !image.naturalHeight) return;
+
+        var frame = slide.getBoundingClientRect();
+        var scale = Math.max(frame.width / image.naturalWidth, frame.height / image.naturalHeight);
+        var renderedWidth = image.naturalWidth * scale;
+        var overflow = renderedWidth - frame.width;
+        var focal = parseFloat(getComputedStyle(slide).getPropertyValue('--hero-focal-x')) / 100;
+        var position = 50;
+
+        if (overflow > 0 && Number.isFinite(focal)) {
+          position = Math.max(0, Math.min(100, ((focal * renderedWidth) - (frame.width / 2)) / overflow * 100));
+        }
+        slide.style.setProperty('--hero-focal-centered-x', position + '%');
+      }
+
+      function centreWideSlideFocals() {
+        slides.forEach(centreWideSlideFocal);
+        Array.prototype.forEach.call(wrapper.querySelectorAll('.hero-carousel-slide--wide'), centreWideSlideFocal);
+      }
+
+      function setWideSlidePanDirection(slide, direction) {
+        if (!slide || !slide.classList.contains('hero-carousel-slide--wide')) return;
+        var movingRight = direction === 'next';
+        slide.style.setProperty('--hero-pan-first-x', movingRight ? '100%' : '0%');
+        slide.style.setProperty('--hero-pan-second-x', movingRight ? '0%' : '100%');
+      }
+
+      centreWideSlideFocals();
+      window.addEventListener('resize', centreWideSlideFocals);
+
+      function realIndex(swiper) {
+        var active = swiper.slides[swiper.activeIndex];
+        return active ? Number(active.getAttribute('data-carousel-index')) : 0;
+      }
+
+      function updateActiveSlidePanDirection(swiper) {
+        var movement = swiper.activeIndex - swiper.previousIndex;
+        if (!movement) return;
+        setWideSlidePanDirection(swiper.slides[swiper.activeIndex], movement > 0 ? 'next' : 'previous');
+      }
+
+      function preload(swiper) {
+        if (!many) return;
+        var active = realIndex(swiper);
+        [active, (active + 1) % slides.length, (active - 1 + slides.length) % slides.length].forEach(function (index) {
+          var image = slides[index].querySelector('img');
+          if (!image) return;
+          image.loading = 'eager';
+          var warm = new Image();
+          warm.srcset = image.srcset;
+          warm.sizes = image.sizes;
+          warm.src = image.currentSrc || image.src;
+          heroPreloads.push(warm);
+        });
+      }
+
+      if (many) {
+        var before = document.createDocumentFragment();
+        var after = document.createDocumentFragment();
+        slides.forEach(function (slide) {
+          var beforeClone = slide.cloneNode(true);
+          var afterClone = slide.cloneNode(true);
+          [beforeClone, afterClone].forEach(function (clone) {
+            clone.setAttribute('aria-hidden', 'true');
+            clone.setAttribute('tabindex', '-1');
+          });
+          before.appendChild(beforeClone);
+          after.appendChild(afterClone);
+        });
+        wrapper.insertBefore(before, wrapper.firstChild);
+        wrapper.appendChild(after);
+      }
+
+      var swiper = new Swiper(carousel, {
+        slidesPerView: 'auto',
+        centeredSlides: true,
+        // Slight overlap prevents subpixel rasterization seams between images.
+        spaceBetween: -1,
+        loop: false,
+        initialSlide: (many ? slides.length : 0) + (requestedIndex >= 0 ? requestedIndex : 0),
+        grabCursor: many,
+        speed: 450,
+        keyboard: false,
+        pagination: false,
+        // Keep the partial's bespoke button labels untouched.
+        a11y: { enabled: false }
+      });
+      if (requestedIndex >= 0) {
+        var transitionImage = swiper.slides[swiper.activeIndex] && swiper.slides[swiper.activeIndex].querySelector('.hero-carousel-image');
+        if (transitionImage) transitionImage.style.viewTransitionName = 'carousel-handoff';
+      }
+      centreWideSlideFocals();
+
+      function stopTimer() {
+        if (timer !== null) { window.clearTimeout(timer); timer = null; }
+      }
+
+      function markManualNavigation() {
+        manualNavigation = true;
+        stopTimer();
+        transition += 1;
+      }
+
+      function schedule(expectedTransition) {
+        stopTimer();
+        if (!many || hovered || manualNavigation || expectedTransition !== transition) return;
+        timer = window.setTimeout(function () {
+          if (hovered || expectedTransition !== transition) return;
+          transition += 1;
+          var id = transition;
+          /* This is always the next physical slide.  slideToLoop() selects the
+             closest matching loop position, which can be behind a wide slide
+             and makes a forward auto-play transition animate backwards. */
+          swiper.slideNext();
+          swiper.once('slideChangeTransitionEnd', function () { schedule(id); });
+        }, delay);
+      }
+
+      function movePrevious() {
+        if (!many || swiper.animating) return;
+        markManualNavigation();
+        swiper.slidePrev();
+      }
+
+      function moveNext() {
+        if (!many || swiper.animating) return;
+        markManualNavigation();
+        swiper.slideNext();
+      }
+
+      function moveTo(index) {
+        if (!many || swiper.animating) return;
+        markManualNavigation();
+        swiper.slideTo(index + slides.length);
+      }
+
+      function updatePagination() {
+        if (!pagination) return;
+        var active = realIndex(swiper);
+        pagination.querySelectorAll('.swiper-pagination-bullet').forEach(function (bullet, index) {
+          var selected = index === active;
+          bullet.classList.toggle('swiper-pagination-bullet-active', selected);
+          bullet.setAttribute('aria-current', selected ? 'true' : 'false');
+        });
+      }
+
+      function updateHash() {
+        var active = slides[realIndex(swiper)];
+        var hash = active && active.getAttribute('data-hash');
+        if (!hash || window.location.hash === '#' + hash) return;
+        window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search + '#' + hash);
+      }
+
+      function normalizeEdge() {
+        if (swiper.activeIndex < slides.length) {
+          swiper.slideTo(swiper.activeIndex + slides.length, 0, false);
+        } else if (swiper.activeIndex >= slides.length * 2) {
+          swiper.slideTo(swiper.activeIndex - slides.length, 0, false);
+        }
+        updatePagination();
+      }
+
+      if (many && pagination) {
+        slides.forEach(function (_, index) {
+          var bullet = document.createElement('button');
+          bullet.type = 'button';
+          bullet.className = 'swiper-pagination-bullet';
+          bullet.setAttribute('aria-label', 'Go to featured image ' + (index + 1));
+          bullet.addEventListener('click', function () { moveTo(index); });
+          pagination.appendChild(bullet);
+        });
+      }
+
+      swiper.on('slideChange', function () {
+        updateActiveSlidePanDirection(swiper);
+        preload(swiper);
+        updatePagination();
+        updateHash();
+      });
+      swiper.on('slideChangeTransitionEnd', normalizeEdge);
+      preload(swiper);
+      updatePagination();
+      if (requestedIndex >= 0) updateHash();
+      if (many) schedule(transition);
+
+      carousel.addEventListener('mouseenter', function () { hovered = true; stopTimer(); });
+      carousel.addEventListener('mouseleave', function () { hovered = false; schedule(transition); });
+      if (previous) previous.addEventListener('click', movePrevious);
+      if (next) next.addEventListener('click', moveNext);
+      document.addEventListener('keydown', function (event) {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight' && event.key !== 'Enter') return;
+        var rect = carousel.getBoundingClientRect();
+        if (rect.bottom <= 0 || rect.top >= window.innerHeight) return;
+        if (event.key === 'Enter') {
+          // Let focused controls and editable fields keep their normal Enter behavior.
+          if (event.defaultPrevented || event.repeat || event.isComposing ||
+              event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+          var target = event.target;
+          if (target instanceof Element &&
+              (target.isContentEditable || target.closest('a, button, input, textarea, select, [role="button"], [role="link"]'))) return;
+          var activeSlide = swiper.slides[swiper.activeIndex];
+          if (activeSlide) {
+            event.preventDefault();
+            activeSlide.click();
+          }
+          return;
+        }
+        event.preventDefault();
+        if (event.key === 'ArrowRight') moveNext();
+        else movePrevious();
+      });
+
+      carousel.addEventListener('click', function (event) {
+        var link = event.target.closest('a.hero-carousel-slide[href]');
+        if (!link) return;
+        var transitionName = link.getAttribute('data-view-transition-name');
+        var image = link.querySelector('.hero-carousel-image');
+        if (transitionName && image) image.style.viewTransitionName = transitionName;
+      });
+
+      var lightbox = carousel.nextElementSibling;
+      if (lightbox && lightbox.classList.contains('hero-carousel-lightbox')) {
+        var lightboxImage = lightbox.querySelector('.hero-carousel-lightbox-image');
+        var lightboxClose = lightbox.querySelector('.hero-carousel-lightbox-close');
+        var opener = null;
+        function closeLightbox() { lightbox.close(); }
+        function openLightbox(trigger) {
+          opener = trigger;
+          lightboxImage.src = trigger.getAttribute('data-full-src');
+          lightboxImage.alt = trigger.getAttribute('data-full-alt') || '';
+          lightbox.showModal();
+          lightboxClose.focus();
+        }
+        carousel.addEventListener('click', function (event) {
+          var trigger = event.target.closest('.hero-carousel-lightbox-trigger');
+          if (trigger) openLightbox(trigger);
+        });
+        lightboxClose.addEventListener('click', closeLightbox);
+        lightbox.addEventListener('click', function (event) {
+          if (event.target === lightbox) closeLightbox();
+        });
+        lightbox.addEventListener('cancel', function (event) {
+          event.preventDefault();
+          closeLightbox();
+        });
+        lightbox.addEventListener('close', function () {
+          lightboxImage.removeAttribute('src');
+          if (opener && document.contains(opener)) opener.focus();
+          opener = null;
+        });
+        lightbox.addEventListener('keydown', function (event) {
+          if (event.key !== 'Tab') return;
+          event.preventDefault();
+          lightboxClose.focus();
+        });
+      }
+      });
+    });
+
+    (function initOpeningSnap() {
+      var root = document.documentElement;
+      var homepage = root.classList.contains('homepage');
+      var atelier = root.classList.contains('atelier-page');
+      var leaf = root.classList.contains('leaf-page');
+      var firstPanel = homepage
+        ? document.querySelector('.homepage .hero-carousel')
+        : atelier
+          ? document.querySelector('.atelier-page .billboard')
+          : leaf
+            ? document.querySelector('.leaf-page .hero-carousel')
+            : document.querySelector('.topic-section-page .hero-carousel');
+      var finalPanel = homepage
+        ? document.querySelector('.homepage .homepage-content')
+        : atelier
+          ? document.querySelector('.atelier-page .atelier-content')
+          : leaf
+            ? document.querySelector('.leaf-page .topic-page')
+            : document.querySelector('.topic-section-page .topics-grid');
+      if (!firstPanel) return;
+      var lastSnapTarget = finalPanel || firstPanel;
+
+      var isUpdating = false;
+      function snapPosition(panel) {
+        var scrollPaddingTop = parseFloat(window.getComputedStyle(root).scrollPaddingTop) || 0;
+        return Math.max(0, panel.offsetTop - scrollPaddingTop);
+      }
+
+      function openingSnapClass() {
+        if (homepage) return 'homepage-opening-snap';
+        if (atelier) return 'atelier-opening-snap';
+        if (leaf) return 'leaf-opening-snap';
+        return 'topic-section-opening-snap';
+      }
+
+      function setOpeningSnap(enabled) {
+        root.classList.toggle(openingSnapClass(), enabled);
+      }
+
+      function updateForPosition() {
+        isUpdating = false;
+        // Once a reader has moved below the final landing point, the rest of the page
+        // deliberately returns to normal document scrolling.
+        setOpeningSnap(window.scrollY <= snapPosition(lastSnapTarget) + 1);
+      }
+
+      window.addEventListener('scroll', function () {
+        // Turn snapping off as soon as a downward gesture carries past the
+        // last panel. This keeps the content below it free-flowing.
+        if (window.scrollY > snapPosition(lastSnapTarget) + 16) {
+          setOpeningSnap(false);
+        }
+        if (!isUpdating) {
+          isUpdating = true;
+          window.requestAnimationFrame(updateForPosition);
+        }
+      }, { passive: true });
+
+      window.addEventListener('scrollend', function () {
+        // Disable snapping after reaching the final landing point so the
+        // remaining content stays in ordinary page flow.
+        if (finalPanel && Math.abs(window.scrollY - snapPosition(finalPanel)) <= 1) {
+          setOpeningSnap(false);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

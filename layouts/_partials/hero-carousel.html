@@ -1,0 +1,72 @@
+{{- $pageContext := . -}}
+{{- /* A carousel belongs to the current page bundle as carousel.yaml. */ -}}
+{{- $slides := slice -}}
+{{- with $pageContext.Resources.GetMatch "carousel.yaml" -}}
+  {{- $slides = . | transform.Unmarshal -}}
+  {{- if lt (len $slides) 3 -}}
+    {{- warnf "Cardhaus carousel for %s lists only %d slide(s); carousels should list at least 3" $pageContext.Path (len $slides) -}}
+  {{- end -}}
+{{- end -}}
+{{- if $slides -}}
+  <div class="swiper hero-carousel" aria-label="Featured images">
+    <div class="swiper-wrapper">
+      {{- range $index, $item := $slides -}}
+        {{- $slide := partial "carousel-slide-data.html" (dict "item" $item "page" $pageContext "source" $pageContext.Path) -}}
+        {{- with $slide -}}
+            {{- $x := 0.5 -}}
+            {{- $y := 0.5 -}}
+            {{- with .focal -}}
+              {{- if isset . "x" }}{{ $x = float .x }}{{ end -}}
+              {{- if isset . "y" }}{{ $y = float .y }}{{ end -}}
+            {{- end -}}
+            {{- $wide := ge .ratio 1 -}}
+            {{- if .link -}}<a class="swiper-slide hero-carousel-slide{{ if $wide }} hero-carousel-slide--wide{{ end }}" href="{{ .link }}"{{ with .viewTransitionName }} data-view-transition-name="{{ . }}"{{ end }}{{ else }}<button type="button" class="swiper-slide hero-carousel-slide hero-carousel-lightbox-trigger{{ if $wide }} hero-carousel-slide--wide{{ end }}" data-full-src="{{ .fullSrc }}" data-full-alt="{{ .alt }}" aria-label="View full image: {{ .alt }}"{{ end }} style="--hero-aspect: {{ printf "%.6f" .ratio }}; --hero-focal-x: {{ mul $x 100 }}%; --hero-focal-y: {{ mul $y 100 }}%;" data-carousel-index="{{ $index }}" data-hash="{{ .hash }}">
+              <img
+                src="{{ .src }}"
+                {{- with .srcset }}
+                srcset="{{ . }}"
+                sizes="100vw"
+                {{- end }}
+                {{- if and .width .height }}
+                width="{{ .width }}"
+                height="{{ .height }}"
+                {{- end }}
+                alt="{{ .alt }}"
+                loading="eager"
+                fetchpriority="high"
+                class="hero-carousel-image"
+                style="object-position: {{ mul $x 100 }}% {{ mul $y 100 }}%;"
+              >
+            {{- if .link }}</a>{{ else }}</button>{{ end -}}
+        {{- end -}}
+      {{- end -}}
+    </div>
+    {{ if gt (len $slides) 1 }}
+      <nav class="hero-carousel-controls" aria-label="Featured image controls">
+        <button class="swiper-button-prev" type="button" aria-label="Previous featured image"></button>
+        <div class="hero-carousel-pagination" aria-label="Choose featured image"></div>
+        <button class="swiper-button-next" type="button" aria-label="Next featured image"></button>
+      </nav>
+    {{ end }}
+  </div>
+  <dialog class="hero-carousel-lightbox" aria-label="Full image viewer">
+    <button type="button" class="hero-carousel-lightbox-close" aria-label="Close full image">CLOSE ✕</button>
+    <img class="hero-carousel-lightbox-image" alt="">
+  </dialog>
+{{- else -}}
+  {{- $heroImage := "" -}}
+  {{- with $pageContext.Params.hero -}}
+    {{- with .image }}{{ $heroImage = . }}{{ end -}}
+  {{- end -}}
+  {{- if not $heroImage -}}
+    {{- errorf "Cardhaus page %s must define either carousel.yaml or hero.image" $pageContext.File.Path -}}
+  {{- end -}}
+  {{- with partial "hero-resource.html" $pageContext -}}
+    {{- partial "hero-image.html" (dict
+      "page" $pageContext
+      "variant" "detail"
+      "loading" "eager"
+      "sizes" "100vw"
+    ) -}}
+  {{- end -}}
+{{- end -}}

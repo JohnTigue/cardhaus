@@ -1,0 +1,5 @@
+{{- /* Stable CSS identifier for a canonical topic hero image. */ -}}
+{{- $pageSlug := .page.File.ContentBaseName | urlize -}}
+{{- $imageBase := path.Base .image.Name -}}
+{{- $imageSlug := strings.Replace $imageBase "." "-" | urlize -}}
+topic-{{ $pageSlug }}-{{ $imageSlug -}}

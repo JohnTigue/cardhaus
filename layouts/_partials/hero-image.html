@@ -1,0 +1,64 @@
+{{- $page := .page -}}
+{{- $variant := .variant | default "card" -}}
+{{- $loading := .loading | default "lazy" -}}
+{{- $sizes := .sizes | default "(max-width: 720px) 100vw, 33vw" -}}
+{{- $imageContext := partial "page-image-context.html" (dict "page" $page "purpose" "hero") -}}
+{{- $image := $imageContext.resource -}}
+{{- $x := $imageContext.focal.x -}}
+{{- $y := $imageContext.focal.y -}}
+{{- $alt := $imageContext.alt -}}
+{{- with .image -}}
+  {{- if strings.HasPrefix . "/" -}}
+    {{- $imagePath := strings.TrimPrefix "/" . -}}
+    {{- $resourcePage := site.GetPage (path.Dir $imagePath) -}}
+    {{- if $resourcePage -}}
+      {{- $image = $resourcePage.Resources.GetMatch (path.Base $imagePath) -}}
+    {{- end -}}
+    {{- if not $image -}}
+      {{- $image = resources.Get $imagePath -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $image = $page.Resources.GetMatch . -}}
+  {{- end -}}
+  {{- if not $image -}}
+    {{- errorf "Cardhaus image override %q was not found for %s (use a bundle-relative name or an absolute path to a page resource or asset)" . $page.File.Path -}}
+  {{- end -}}
+  {{- $x = 0.5 -}}
+  {{- $y = 0.5 -}}
+{{- end -}}
+{{- with .alt }}{{ $alt = . }}{{ end -}}
+{{- $transitionName := "" -}}
+{{- if and $image (or (eq $variant "card") (eq $variant "detail")) -}}
+  {{- $transitionName = partial "view-transition-name.html" (dict "page" $page "image" $image) -}}
+{{- end -}}
+
+<div
+  class="hero-media hero-media--{{ $variant }}{{ if not $image }} hero-media--missing{{ end }}"
+  data-topic-id="{{ $page.RelPermalink }}"
+>
+  {{- with $image -}}
+    {{- $small := false -}}
+    {{- $medium := false -}}
+    {{- $large := false -}}
+    {{- if ge .Width 640 }}{{ $small = .Resize "640x webp q82" }}{{ end -}}
+    {{- if ge .Width 960 }}{{ $medium = .Resize "960x webp q82" }}{{ end -}}
+    {{- if ge .Width 1440 }}{{ $large = .Resize "1440x webp q82" }}{{ end -}}
+    {{- $fallback := . -}}
+    {{- if $medium }}{{ $fallback = $medium }}{{ else if $small }}{{ $fallback = $small }}{{ end -}}
+    <img
+      class="hero-image hero-image--{{ $variant }}"
+      src="{{ $fallback.RelPermalink }}"
+      {{- if $small }}
+      srcset="{{ $small.RelPermalink }} 640w{{ with $medium }}, {{ .RelPermalink }} 960w{{ end }}{{ with $large }}, {{ .RelPermalink }} 1440w{{ end }}"
+      sizes="{{ $sizes }}"
+      {{- end }}
+      width="{{ $fallback.Width }}"
+      height="{{ $fallback.Height }}"
+      alt="{{ $alt }}"
+      loading="{{ $loading }}"
+      style="--focal-x: {{ mul $x 100 }}%; --focal-y: {{ mul $y 100 }}%;{{ with $transitionName }} view-transition-name: {{ . }};{{ end }}"
+    >
+  {{- else -}}
+    <span class="hero-media-placeholder" aria-hidden="true">NO IMAGE</span>
+  {{- end -}}
+</div>

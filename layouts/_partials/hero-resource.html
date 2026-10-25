@@ -1,0 +1,25 @@
+{{- $page := . -}}
+{{- $resource := false -}}
+{{- $imageName := "" -}}
+
+{{- with $page.Params.hero -}}
+  {{- with .image -}}
+    {{- $imageName = . -}}
+  {{- end -}}
+{{- end -}}
+
+{{- with $imageName -}}
+  {{- $resource = $page.Resources.GetMatch . -}}
+  {{- if not $resource -}}
+    {{- errorf "Cardhaus hero image %q was not found for %s" . $page.File.Path -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if and (not $imageName) (not $resource) -}}
+  {{- $images := where ($page.Resources.ByType "image") "MediaType.SubType" "ne" "avif" -}}
+  {{- if gt (len $images) 0 -}}
+    {{- $resource = index $images 0 -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return $resource -}}

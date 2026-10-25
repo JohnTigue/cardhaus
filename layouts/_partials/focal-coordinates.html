@@ -1,0 +1,22 @@
+{{- $focal := . | default dict -}}
+{{- $x := 0.5 -}}
+{{- $y := 0.5 -}}
+
+{{- if isset $focal "x" -}}
+  {{- $x = float (index $focal "x") -}}
+{{- end -}}
+{{- if isset $focal "y" -}}
+  {{- $y = float (index $focal "y") -}}
+{{- else if isset $focal "true" -}}
+  {{- /* YAML 1.1 parses an unquoted `y` key as the boolean `true`. */ -}}
+  {{- $y = float (index $focal "true") -}}
+{{- end -}}
+
+{{- if or (lt $x 0.0) (gt $x 1.0) -}}
+  {{- errorf "Cardhaus focal x must be between 0 and 1; received %v" $x -}}
+{{- end -}}
+{{- if or (lt $y 0.0) (gt $y 1.0) -}}
+  {{- errorf "Cardhaus focal y must be between 0 and 1; received %v" $y -}}
+{{- end -}}
+
+{{- return (dict "x" $x "y" $y) -}}

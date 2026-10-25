@@ -1,0 +1,15 @@
+{{- /*
+  Build the common image derivative set used by homepage and topic views.
+  Hugo caches these transformations by source and specification, so a source
+  selected for both contexts is processed once.
+*/ -}}
+{{- $image := . -}}
+{{- $small := false -}}
+{{- $medium := false -}}
+{{- $large := false -}}
+{{- if ge $image.Width 640 }}{{ $small = $image.Resize "640x webp q82" }}{{ end -}}
+{{- if ge $image.Width 1000 }}{{ $medium = $image.Resize "1000x webp q82" }}{{ end -}}
+{{- if ge $image.Width 1600 }}{{ $large = $image.Resize "1600x webp q82" }}{{ end -}}
+{{- $fallback := $image -}}
+{{- if $medium }}{{ $fallback = $medium }}{{ else if $small }}{{ $fallback = $small }}{{ end -}}
+{{- return (dict "source" $image "small" $small "medium" $medium "large" $large "fallback" $fallback) -}}

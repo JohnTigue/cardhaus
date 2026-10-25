@@ -1,0 +1,57 @@
+{{- $config := site.Params.cardhaus.favicons | default dict -}}
+
+{{- with $config.ico -}}
+  <link rel="icon" type="image/x-icon" href="{{ . | relURL }}">
+{{- end -}}
+
+{{- with $config.source -}}
+  {{- $sourcePath := . -}}
+  {{- with resources.Get $sourcePath -}}
+    {{- $source := . -}}
+    {{- $icon16 := $source.Resize "16x16" -}}
+    {{- $icon32 := $source.Resize "32x32" -}}
+    {{- $icon48 := $source.Resize "48x48" -}}
+    {{- $appleTouchIcon := $source.Resize "180x180" -}}
+    {{- $appIcon192 := $source.Resize "192x192" -}}
+    {{- $appIcon512 := $source.Resize "512x512" -}}
+
+    {{- /* Create a padded maskable variant using the image's dominant background color. */ -}}
+    {{- $backgroundColor := index $source.Colors 0 -}}
+    {{- $maskableSource := $source.Resize "420x420" -}}
+    {{- $maskableSource = $maskableSource.Filter (images.Padding 75 $backgroundColor) -}}
+    {{- $maskableIcon192 := $maskableSource.Resize "192x192" -}}
+    {{- $maskableIcon512 := $maskableSource.Resize "512x512" -}}
+
+    {{- $manifestIcons := slice
+      (dict "src" $appIcon192.RelPermalink "sizes" "192x192" "type" "image/png")
+      (dict "src" $appIcon512.RelPermalink "sizes" "512x512" "type" "image/png")
+      (dict "src" $maskableIcon192.RelPermalink "sizes" "192x192" "type" "image/png" "purpose" "maskable")
+      (dict "src" $maskableIcon512.RelPermalink "sizes" "512x512" "type" "image/png" "purpose" "maskable")
+    -}}
+    {{- $name := $config.name | default site.Title -}}
+    {{- $shortName := $config.shortName | default $name -}}
+    {{- $startURL := $config.startURL | default ("/" | relURL) -}}
+    {{- $scope := $config.scope | default ("/" | relURL) -}}
+    {{- $display := $config.display | default "standalone" -}}
+    {{- $manifest := dict
+      "name" $name
+      "short_name" $shortName
+      "start_url" $startURL
+      "scope" $scope
+      "display" $display
+      "icons" $manifestIcons
+    -}}
+    {{- with site.Params.cardhaus.themeColor -}}
+      {{- $manifest = merge $manifest (dict "theme_color" .) -}}
+    {{- end -}}
+    {{- $manifestResource := resources.FromString "site.webmanifest" ($manifest | jsonify) -}}
+
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ $icon16.RelPermalink }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ $icon32.RelPermalink }}">
+    <link rel="icon" type="image/png" sizes="48x48" href="{{ $icon48.RelPermalink }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ $appleTouchIcon.RelPermalink }}">
+    <link rel="manifest" href="{{ $manifestResource.RelPermalink }}">
+  {{- else -}}
+    {{- errorf "Cardhaus favicon source %q was not found in the consumer assets directory" $sourcePath -}}
+  {{- end -}}
+{{- end -}}
